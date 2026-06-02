@@ -20,11 +20,6 @@ source: <@BOOKURL@>
 
 <@BOOKTHUMBNAIL@>
 
-###### Previous Notes:
-[[📖 BOOK REPORT]]
-
----
-
 ## 책 메모
 
 1. 이 책의 핵심 주장:
@@ -33,11 +28,5 @@ source: <@BOOKURL@>
 4. 내 삶/일/투자/공부에 적용할 점:
 5. 다시 확인하고 싶은 질문:
 
----
 
-###### Link to This File
 
-```dataview
-LIST WITHOUT ID link(file.link, title)
-FROM [[]]
-```
