@@ -5,6 +5,7 @@ import {
 	FuzzySuggestModal,
 	Modal,
 	Notice,
+	sanitizeHTMLToDom,
 	Setting,
 	TFile,
 	TextComponent,
@@ -217,10 +218,8 @@ export class BookSearchModal extends Modal {
 			}
 
 			const bodyEl = itemEl.createDiv('book-info-result-body');
-			bodyEl.createDiv({
-				cls: 'book-info-result-title',
-				text: result.title,
-			});
+			const titleEl = bodyEl.createDiv('book-info-result-title');
+			this.renderResultTitle(titleEl, result);
 
 			if (result.subtitle) {
 				bodyEl.createDiv({
@@ -234,12 +233,7 @@ export class BookSearchModal extends Modal {
 				text: this.formatResultMeta(result),
 			});
 
-			if (result.isbn || result.category) {
-				bodyEl.createDiv({
-					cls: 'book-info-result-extra',
-					text: [result.isbn, result.category].filter(Boolean).join(' / '),
-				});
-			}
+			this.renderResultTags(bodyEl, result);
 
 			new ButtonComponent(itemEl)
 				.setButtonText('Select')
@@ -247,6 +241,42 @@ export class BookSearchModal extends Modal {
 				.onClick(() => {
 					void this.createNoteFromResult(result);
 				});
+		}
+	}
+
+	private renderResultTitle(
+		containerEl: HTMLElement,
+		result: BookSearchResult,
+	): void {
+		if (!result.titleHtml) {
+			containerEl.setText(result.title);
+			return;
+		}
+
+		containerEl.appendChild(sanitizeHTMLToDom(result.titleHtml));
+	}
+
+	private renderResultTags(
+		containerEl: HTMLElement,
+		result: BookSearchResult,
+	): void {
+		const tags = [
+			result.productType,
+			result.category,
+			result.categoryPath?.slice(1).join(' > '),
+			result.isbn ? `ISBN ${result.isbn}` : undefined,
+		].filter((tag): tag is string => Boolean(tag));
+
+		if (tags.length === 0) {
+			return;
+		}
+
+		const tagListEl = containerEl.createDiv('book-info-result-tags');
+		for (const tag of tags) {
+			tagListEl.createSpan({
+				cls: 'book-info-result-tag',
+				text: tag,
+			});
 		}
 	}
 

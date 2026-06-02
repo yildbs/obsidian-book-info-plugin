@@ -4,11 +4,14 @@ export interface BookSearchResult {
 	id: string;
 	providerId: BookProviderId;
 	title: string;
+	titleHtml?: string;
 	subtitle?: string;
 	authors: string[];
 	publisher?: string;
 	publishedDate?: string;
+	productType?: string;
 	category?: string;
+	categoryPath?: string[];
 	isbn?: string;
 	thumbnailUrl?: string;
 	url: string;

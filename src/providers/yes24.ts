@@ -31,8 +31,13 @@ const extractBookId = (url: string): string => {
 	return url.match(/\/Goods\/(\d+)/)?.[1] ?? url;
 };
 
+const htmlToText = (html: string): string => {
+	const document = new DOMParser().parseFromString(html, 'text/html');
+	return document.body.textContent ?? html;
+};
+
 const normalizeTitle = (title: string): string => {
-	return title
+	return htmlToText(title)
 		.replace(/\(.*?\)/g, '')
 		.replace(/\[.*?\]/g, '')
 		.replace(/\s+/g, ' ')
@@ -53,6 +58,40 @@ const parseDate = (value: string): string => {
 	return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 };
 
+const parseProductType = (
+	domain: string | undefined,
+	resKeyGb: string | undefined,
+): string | undefined => {
+	if (domain === '03' || resKeyGb === '13') {
+		return 'eBook';
+	}
+
+	if (domain === '01' || resKeyGb === '01') {
+		return '국내도서';
+	}
+
+	if (domain === '02') {
+		return '외국도서';
+	}
+
+	return undefined;
+};
+
+const parseBulletAuthors = (authorInfo: string | undefined): string[] => {
+	if (!authorInfo) {
+		return [];
+	}
+
+	const primaryAuthor = authorInfo
+		.split('`')[0]
+		?.replace(/<([^>]+)>/g, '$1')
+		.replace(/\b(저|역|글|그림|편저|공저)\b/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+	return primaryAuthor ? [primaryAuthor] : [];
+};
+
 const parseSearchAuthors = (item: Element): string[] => {
 	const authors = Array.from(
 		item.querySelectorAll('.info_auth a, .gd_auth a, a[href*="Author"]'),
@@ -67,6 +106,7 @@ const parseSearchItem = (item: Element): BookSearchResult | undefined => {
 	const titleAnchor = item.querySelector<HTMLAnchorElement>('a.gd_name');
 	const href = titleAnchor?.getAttribute('href');
 	const title = titleAnchor?.textContent?.trim();
+	const titleHtml = titleAnchor?.innerHTML.trim();
 
 	if (!href || !title) {
 		return undefined;
@@ -82,6 +122,7 @@ const parseSearchItem = (item: Element): BookSearchResult | undefined => {
 		id: extractBookId(url),
 		providerId: 'yes24',
 		title: normalizeTitle(title),
+		titleHtml,
 		authors: parseSearchAuthors(item),
 		publisher,
 		publishedDate,
@@ -99,8 +140,11 @@ const parseBulletSearch = async (query: string): Promise<BookSearchResult[]> => 
 			GOODDS_INDEXES?: {
 				GOODS_NO?: string | number;
 				GOODS_NM?: string;
-				AUTH_NM?: string;
-				PUB_NM?: string;
+				SUB_TTL?: string;
+				AUTH_INFO?: string;
+				COMPANY2?: string;
+				DOMAIN?: string;
+				RES_KEY_GB?: string;
 				IMG_URL?: string;
 			};
 		}>;
@@ -120,14 +164,50 @@ const parseBulletSearch = async (query: string): Promise<BookSearchResult[]> => 
 			id: goodsNo,
 			providerId: 'yes24',
 			title: normalizeTitle(title),
-			authors: indexes.AUTH_NM ? [indexes.AUTH_NM] : [],
-			publisher: indexes.PUB_NM,
+			titleHtml: title,
+			subtitle: indexes.SUB_TTL || undefined,
+			authors: parseBulletAuthors(indexes.AUTH_INFO),
+			publisher: indexes.COMPANY2,
+			productType: parseProductType(indexes.DOMAIN, indexes.RES_KEY_GB),
 			thumbnailUrl: indexes.IMG_URL ? absoluteUrl(indexes.IMG_URL) : undefined,
 			url: `${YES24_ORIGIN}/Product/Goods/${goodsNo}`,
 		});
 	}
 
 	return results;
+};
+
+const parseJsonLdGenres = (html: Document): string[] => {
+	for (const script of Array.from(
+		html.querySelectorAll('script[type="application/ld+json"]'),
+	)) {
+		const rawJson = script.textContent?.trim();
+		if (!rawJson) {
+			continue;
+		}
+
+		try {
+			const data = JSON.parse(rawJson) as {
+				genre?: string | string[];
+			};
+			const genre = data.genre;
+
+			if (Array.isArray(genre)) {
+				return genre.map((item) => item.trim()).filter(Boolean);
+			}
+
+			if (genre) {
+				return genre
+					.split(/[,>]/)
+					.map((item) => item.trim())
+					.filter(Boolean);
+			}
+		} catch {
+			continue;
+		}
+	}
+
+	return [];
 };
 
 const parseAuthors = (html: Document): string[] => {
@@ -164,6 +244,11 @@ const parseDescription = (html: Document): string | undefined => {
 };
 
 const parseCategory = (html: Document): string | undefined => {
+	const genres = parseJsonLdGenres(html);
+	if (genres.length > 0) {
+		return genres[0];
+	}
+
 	const categories = Array.from(
 		html.querySelectorAll(
 			'#infoset_goodsCate .infoSetCont_wrap dl:nth-child(1) dd ul li a',
@@ -173,6 +258,32 @@ const parseCategory = (html: Document): string | undefined => {
 		.filter(Boolean);
 
 	return categories.at(0);
+};
+
+const parseCategoryPath = (html: Document): string[] | undefined => {
+	const genres = parseJsonLdGenres(html);
+	return genres.length > 0 ? genres : undefined;
+};
+
+const parseProductTypeFromDetail = (
+	html: Document,
+	fallback: string | undefined,
+): string | undefined => {
+	return textOf(html, '#ulCategoryList .cateOn .txt') || fallback;
+};
+
+const enrichSearchResults = async (
+	results: BookSearchResult[],
+): Promise<BookSearchResult[]> => {
+	return Promise.all(
+		results.slice(0, 10).map(async (result) => {
+			try {
+				return await yes24Provider.getDetails(result);
+			} catch {
+				return result;
+			}
+		}),
+	);
 };
 
 export const yes24Provider: BookSearchProvider = {
@@ -190,10 +301,10 @@ export const yes24Provider: BookSearchProvider = {
 			.filter((result): result is BookSearchResult => result !== undefined);
 
 		if (results.length > 0) {
-			return results;
+			return enrichSearchResults(results);
 		}
 
-		return parseBulletSearch(query);
+		return enrichSearchResults(await parseBulletSearch(query));
 	},
 
 	async getDetails(result: BookSearchResult): Promise<BookMetadata> {
@@ -212,13 +323,16 @@ export const yes24Provider: BookSearchProvider = {
 		return {
 			...result,
 			title,
+			titleHtml: result.titleHtml,
 			subtitle: subtitle || result.subtitle,
 			authors: parseAuthors(html).length > 0 ? parseAuthors(html) : result.authors,
 			publisher: textOf(html, '#yDetailTopWrap .gd_infoTop .gd_pub') || result.publisher,
 			publishedDate:
 				parseDate(textOf(html, '#yDetailTopWrap .gd_infoTop .gd_date')) ||
 				result.publishedDate,
+			productType: parseProductTypeFromDetail(html, result.productType),
 			category: parseCategory(html) ?? result.category,
+			categoryPath: parseCategoryPath(html) ?? result.categoryPath,
 			isbn: parseIsbn(html) ?? result.isbn,
 			thumbnailUrl: thumbnailUrl ? absoluteUrl(thumbnailUrl) : undefined,
 			pageCount: parsePageCount(html),
