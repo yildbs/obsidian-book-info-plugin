@@ -71,6 +71,7 @@ export default class BookInfoPlugin extends Plugin {
 			providers: this.providers,
 			settings: this.settings,
 			defaultTemplate: this.defaultTemplate,
+			saveSettings: () => this.saveSettings(),
 		}).open();
 	}
 }

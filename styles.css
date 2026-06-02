@@ -1,3 +1,15 @@
+.book-info-modal-shell {
+	max-height: 86vh;
+	width: min(920px, 92vw);
+}
+
+.book-info-modal {
+	display: flex;
+	flex-direction: column;
+	max-height: calc(86vh - 48px);
+	min-height: 0;
+}
+
 .book-info-modal .setting-item:last-of-type {
 	border-top: 0;
 }
@@ -12,8 +24,9 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	max-height: 520px;
+	min-height: 0;
 	overflow-y: auto;
+	padding-right: 4px;
 }
 
 .book-info-result {

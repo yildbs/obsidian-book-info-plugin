@@ -45,6 +45,7 @@ export class BookSearchModal extends Modal {
 	private readonly providers: BookSearchProvider[];
 	private readonly settings: BookInfoPluginSettings;
 	private readonly defaultTemplate: string;
+	private readonly saveSettings: () => Promise<void>;
 	private selectedProviderId: BookProviderId;
 	private selectedTemplateFile: TFile | undefined;
 	private query = '';
@@ -59,21 +60,30 @@ export class BookSearchModal extends Modal {
 		providers,
 		settings,
 		defaultTemplate,
+		saveSettings,
 	}: {
 		app: App;
 		providers: BookSearchProvider[];
 		settings: BookInfoPluginSettings;
 		defaultTemplate: string;
+		saveSettings: () => Promise<void>;
 	}) {
 		super(app);
 		this.providers = providers;
 		this.settings = settings;
 		this.defaultTemplate = defaultTemplate;
+		this.saveSettings = saveSettings;
 		this.selectedProviderId = settings.defaultProvider;
+		this.selectedTemplateFile = this.getSavedTemplateFile();
+		if (settings.defaultTemplatePath && !this.selectedTemplateFile) {
+			this.settings.defaultTemplatePath = '';
+			void this.saveSettings();
+		}
 	}
 
 	onOpen(): void {
 		const { contentEl } = this;
+		this.modalEl.addClass('book-info-modal-shell');
 		contentEl.empty();
 		contentEl.addClass('book-info-modal');
 		contentEl.createEl('h2', { text: 'Import book metadata' });
@@ -84,6 +94,7 @@ export class BookSearchModal extends Modal {
 	}
 
 	onClose(): void {
+		this.modalEl.removeClass('book-info-modal-shell');
 		this.contentEl.empty();
 	}
 
@@ -132,6 +143,8 @@ export class BookSearchModal extends Modal {
 					.onClick(() => {
 						new TemplateNoteSuggestModal(this.app, (file) => {
 							this.selectedTemplateFile = file;
+							this.settings.defaultTemplatePath = file.path;
+							void this.saveSettings();
 							chooseTemplateButton?.setButtonText(this.getTemplateButtonText());
 						}).open();
 					});
@@ -140,8 +153,10 @@ export class BookSearchModal extends Modal {
 				button
 					.setIcon('x')
 					.setTooltip('Clear template note')
-					.onClick(() => {
+					.onClick(async () => {
 						this.selectedTemplateFile = undefined;
+						this.settings.defaultTemplatePath = '';
+						await this.saveSettings();
 						chooseTemplateButton?.setButtonText(this.getTemplateButtonText());
 					}),
 			);
@@ -159,6 +174,16 @@ export class BookSearchModal extends Modal {
 
 	private getTemplateButtonText(): string {
 		return this.selectedTemplateFile?.path ?? 'Choose template';
+	}
+
+	private getSavedTemplateFile(): TFile | undefined {
+		const path = this.settings.defaultTemplatePath;
+		if (!path) {
+			return undefined;
+		}
+
+		const file = this.app.vault.getAbstractFileByPath(path);
+		return file instanceof TFile ? file : undefined;
 	}
 
 	private getProvider(): BookSearchProvider | undefined {

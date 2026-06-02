@@ -4,11 +4,13 @@ import { BookProviderId } from './types';
 
 export interface BookInfoPluginSettings {
 	defaultProvider: BookProviderId;
+	defaultTemplatePath: string;
 	openAfterCreate: boolean;
 }
 
 export const DEFAULT_SETTINGS: BookInfoPluginSettings = {
 	defaultProvider: 'yes24',
+	defaultTemplatePath: '',
 	openAfterCreate: true,
 };
 
@@ -38,6 +40,13 @@ export class BookInfoSettingTab extends PluginSettingTab {
 						this.plugin.settings.defaultProvider = value as BookProviderId;
 						await this.plugin.saveSettings();
 					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Default template note')
+			.setDesc(
+				this.plugin.settings.defaultTemplatePath ||
+					'No template note selected. The bundled default template is used.',
 			);
 
 		new Setting(containerEl)
