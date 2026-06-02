@@ -10,7 +10,7 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = process.argv[2] === 'production';
-const pluginId = 'obsidian-book-info-plugin';
+const pluginId = 'book-info';
 const buildDir = `build_output/${pluginId}`;
 const outfile = prod ? `${buildDir}/main.js` : 'main.js';
 

@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-book-info-plugin",
+	"id": "book-info",
 	"name": "Book Info",
 	"version": "1.0.0",
 	"minAppVersion": "1.4.0",
-	"description": "Search books and create metadata-rich book notes from templates.",
-	"author": "",
-	"isDesktopOnly": false
+	"description": "Search YES24 for book metadata and create template-based book notes with covers.",
+	"author": "yildbs",
+	"isDesktopOnly": true
 }

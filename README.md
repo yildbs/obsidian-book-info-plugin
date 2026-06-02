@@ -26,10 +26,10 @@ Edit this file to change the bundled default book note format. The file is copie
 Production build output:
 
 ```text
-build_output/obsidian-book-info-plugin/main.js
-build_output/obsidian-book-info-plugin/manifest.json
-build_output/obsidian-book-info-plugin/styles.css
-build_output/obsidian-book-info-plugin/default-book-template.md
+build_output/book-info/main.js
+build_output/book-info/manifest.json
+build_output/book-info/styles.css
+build_output/book-info/default-book-template.md
 ```
 
 ## Custom templates
