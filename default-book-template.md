@@ -1,7 +1,7 @@
 ---
 note_type: book_review
-title: <@YYYYMMDD@> <@BOOKTITLE@>
-aliases: <@YYYYMMDD@> <@BOOKTITLE@>
+title: <@BOOKTITLE@>
+aliases: <@BOOKTITLE@>
 subtitle: <@BOOKSUBTITLE@>
 thumbnail-img: <@BOOKTHUMBNAILURL@>
 author: <@BOOKAUTHOR@>
