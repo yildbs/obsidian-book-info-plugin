@@ -6,6 +6,8 @@ import { globalIgnores } from 'eslint/config';
 export default tseslint.config(
 	globalIgnores([
 		'node_modules',
+		'kr-book-info-plugin',
+		'build_output',
 		'dist',
 		'esbuild.config.mjs',
 		'version-bump.mjs',

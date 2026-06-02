@@ -1,8 +1,73 @@
-/*
+.book-info-modal .setting-item:last-of-type {
+	border-top: 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.book-info-status {
+	color: var(--text-muted);
+	margin: 12px 0;
+	min-height: 20px;
+}
 
-If your plugin does not need CSS, delete this file.
+.book-info-results {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: 440px;
+	overflow-y: auto;
+}
 
-*/
+.book-info-result {
+	align-items: center;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: 56px 1fr auto;
+	padding: 10px;
+}
+
+.book-info-result-thumbnail {
+	align-items: center;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	display: flex;
+	height: 76px;
+	justify-content: center;
+	overflow: hidden;
+	width: 56px;
+}
+
+.book-info-result-thumbnail img {
+	height: 100%;
+	object-fit: cover;
+	width: 100%;
+}
+
+.book-info-result-body {
+	min-width: 0;
+}
+
+.book-info-result-title {
+	color: var(--text-normal);
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.book-info-result-subtitle,
+.book-info-result-meta,
+.book-info-result-extra {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin-top: 2px;
+	overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+	.book-info-result {
+		grid-template-columns: 48px 1fr;
+	}
+
+	.book-info-result > button {
+		grid-column: 1 / -1;
+	}
+}
