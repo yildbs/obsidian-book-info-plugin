@@ -9,7 +9,7 @@ publisher: <@BOOKPUBLISHER@>
 published_at: <@BOOKPUBLISHEDDATE@>
 isbn: <@BOOKISBN@>
 category: <@BOOKCATEGORY@>
-status: reading
+status: reading | finished | paused | abandoned
 started_at: <@YYYY-MM-DD@>
 finished_at:
 rating:
